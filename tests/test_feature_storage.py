@@ -67,6 +67,15 @@ def test_write_and_verify_feature_bank(tmp_path: Path) -> None:
     assert result.ok, result.errors
 
 
+def test_feature_bank_dir_uses_canonical_layout(tmp_path: Path) -> None:
+    assert feature_bank_dir(
+        tmp_path,
+        dataset_id="cifar10",
+        split="train",
+        backbone_id="clip_vit_b32",
+    ) == tmp_path / "cifar10" / "train" / "clip_vit_b32"
+
+
 def test_write_feature_bank_refuses_existing_without_overwrite(tmp_path: Path) -> None:
     bank_dir = write_tiny_bank(tmp_path)
 

@@ -100,7 +100,9 @@ def test_task_split_hash_and_train_val_disjoint(tmp_path: Path) -> None:
             "classes": first["classes"],
             "train_indices": first["train_indices"],
             "val_indices": first["val_indices"],
-            "test_indices": first["test_indices"],
-            "image_size": first["image_size"],
-        }
-    )
+                "test_indices": first["test_indices"],
+                "image_size": first["image_size"],
+                "source_splits": first["source_splits"],
+                "split_policy": first["split_policy"],
+            }
+        )

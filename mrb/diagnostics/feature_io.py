@@ -54,8 +54,8 @@ def candidate_feature_bank_dirs(
     source_split = normalize_component(split)
     backbone = normalize_component(backbone_id)
     return [
-        root / backbone / dataset / source_split,
         root / dataset / source_split / backbone,
+        root / backbone / dataset / source_split,
     ]
 
 

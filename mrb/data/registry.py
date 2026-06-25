@@ -292,7 +292,7 @@ def check_project_data_symlink(project_data: Path, data_root: Path) -> dict[str,
             status["resolves_to_data_root"] = project_data.resolve() == data_root.resolve()
         except OSError:
             status["resolves_to_data_root"] = False
-        status["mode"] = "full_symlink" if status["resolves_to_data_root"] else "wrong_symlink"
+        status["mode"] = "full_symlink" if status["resolves_to_data_root"] else "other_symlink"
         if not status["resolves_to_data_root"]:
             status["warnings"].append("project data symlink does not resolve to data root")
         return status
@@ -335,9 +335,14 @@ def inspect_dataset(
     entry: DatasetEntry,
     *,
     root_override: str | Path | None = None,
+    data_root: Path | None = None,
     env: Mapping[str, str] | None = None,
-    load_metadata: bool = False,
+    load_metadata: bool | None = None,
+    load_smoke_metadata: bool | None = None,
 ) -> dict[str, Any]:
+    if data_root is not None and env is None:
+        env = {registry.root_env: str(data_root)}
+    should_load_metadata = bool(load_smoke_metadata if load_smoke_metadata is not None else load_metadata)
     root = registry.dataset_root(entry, root_override=root_override, env=env)
     available = dataset_available(registry, entry, root_override=root_override, env=env)
     result: dict[str, Any] = {
@@ -370,7 +375,7 @@ def inspect_dataset(
     if entry.loader_status == "inspect_only":
         result["warnings"].append("dataset is registered for inspection only")
         return result
-    if not load_metadata:
+    if not should_load_metadata:
         return result
 
     try:

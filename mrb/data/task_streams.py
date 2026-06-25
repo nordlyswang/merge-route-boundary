@@ -41,6 +41,8 @@ class Task:
     num_test: int
     image_size: int
     split_hash: str
+    source_splits: dict[str, str]
+    split_policy: str
 
     @classmethod
     def from_split(cls, task: TaskSplit) -> "Task":
@@ -56,6 +58,8 @@ class Task:
             num_test=task.num_test,
             image_size=task.image_size,
             split_hash=task.split_hash,
+            source_splits=dict(task.source_splits or {}),
+            split_policy=task.split_policy,
         )
 
 
@@ -110,12 +114,15 @@ def build_task_stream(
     configs = load_task_stream_configs(stream_config_paths)
     if stream_id not in configs:
         raise KeyError(f"Unknown stream_id: {stream_id}")
-    config = configs[stream_id]
+    config = dict(configs[stream_id])
     stream_type = str(config["stream_type"])
 
     if stream_type == "class_incremental":
+        config["class_order_seed"] = int(config.get("class_order_seed", seed))
+        config["split_seed"] = int(seed)
         task_splits = _build_class_incremental(config, seed, registry)
     elif stream_type == "dataset_incremental":
+        config["split_seed"] = int(seed)
         task_splits = _build_dataset_incremental(config, seed, registry)
     else:
         raise ValueError(f"Unsupported stream_type {stream_type!r}")
@@ -171,8 +178,12 @@ def _build_class_incremental(
         num_tasks=int(config["num_tasks"]),
         classes_per_task=int(config["classes_per_task"]),
         seed=seed,
+        class_order_seed=int(config.get("class_order_seed", seed)),
+        split_seed=int(config.get("split_seed", seed)),
         val_ratio=float(config.get("val_ratio", 0.1)),
         image_size=int(config.get("image_size", entry.default_image_size)),
+        train_source_split=train_split,
+        test_source_split=test_split,
     )
 
 
@@ -185,7 +196,7 @@ def _build_dataset_incremental(
     if not isinstance(dataset_payloads, list) or not dataset_payloads:
         raise ValueError("dataset_incremental stream requires a non-empty datasets list")
 
-    loaded: list[tuple[str, list[int], list[int], int | None]] = []
+    loaded: list[dict[str, Any]] = []
     for item in dataset_payloads:
         if isinstance(item, str):
             dataset_id = normalize_dataset_id(item)
@@ -205,16 +216,47 @@ def _build_dataset_incremental(
         entry = registry.get(dataset_id)
         train_name = str(train_split or config.get("train_split") or default_train_split(entry))
         test_name = str(test_split or config.get("test_split") or default_test_split(entry))
-        train_dataset = get_dataset(dataset_id, train_name, registry=registry)
-        test_dataset = get_dataset(dataset_id, test_name, registry=registry)
-        loaded.append(
-            (
-                dataset_id,
-                get_targets(train_dataset),
-                get_targets(test_dataset),
-                entry.num_classes or infer_num_classes(train_dataset),
+        loader_mode = str(entry.config.get("loader", "split"))
+        if loader_mode == "no_split" and train_name == test_name:
+            source_dataset = get_dataset(dataset_id, train_name, registry=registry)
+            holdout = dict(
+                config.get(
+                    "holdout",
+                    {"train_ratio": 0.8, "val_ratio": 0.1, "test_ratio": 0.1},
+                )
             )
-        )
+            loaded.append(
+                {
+                    "dataset_id": dataset_id,
+                    "train_targets": get_targets(source_dataset),
+                    "test_targets": get_targets(source_dataset),
+                    "num_classes": entry.num_classes or infer_num_classes(source_dataset),
+                    "split_policy": str(config.get("split_policy", "deterministic_holdout")),
+                    "holdout": holdout,
+                    "source_splits": {
+                        "train": train_name,
+                        "val": train_name,
+                        "test": train_name,
+                    },
+                }
+            )
+        else:
+            train_dataset = get_dataset(dataset_id, train_name, registry=registry)
+            test_dataset = get_dataset(dataset_id, test_name, registry=registry)
+            loaded.append(
+                {
+                    "dataset_id": dataset_id,
+                    "train_targets": get_targets(train_dataset),
+                    "test_targets": get_targets(test_dataset),
+                    "num_classes": entry.num_classes or infer_num_classes(train_dataset),
+                    "split_policy": "predefined_splits",
+                    "source_splits": {
+                        "train": train_name,
+                        "val": train_name,
+                        "test": test_name,
+                    },
+                }
+            )
 
     if not loaded:
         raise ValueError("dataset_incremental stream has no enabled datasets")

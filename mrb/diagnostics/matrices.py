@@ -97,6 +97,8 @@ def compute_pairwise_boundary_matrix(
     min_samples_per_task: int = 50,
     feature_root: Path | None = None,
     config_path: Path | None = None,
+    diagnostics_config: dict[str, Any] | None = None,
+    config_hash: str | None = None,
     overwrite: bool = False,
 ) -> pd.DataFrame:
     manifest, resolved_manifest_path = _load_or_build_manifest(stream_id, seed, manifest_path)
@@ -111,6 +113,7 @@ def compute_pairwise_boundary_matrix(
             strict_features=strict_features,
             feature_root=feature_root,
             seed=seed,
+            diagnostics_config=diagnostics_config,
         )
         for task in tasks
     ]
@@ -125,6 +128,7 @@ def compute_pairwise_boundary_matrix(
                 logical_split=split,
                 task_i=task_i,
                 task_j=task_j,
+                diagnostics_config=diagnostics_config,
             )
         )
 
@@ -133,6 +137,7 @@ def compute_pairwise_boundary_matrix(
     df.attrs["manifest_path"] = str(resolved_manifest_path) if resolved_manifest_path else None
     df.attrs["feature_bank_metadata"] = feature_metadata
     df.attrs["metric_version"] = METRIC_VERSION
+    df.attrs["config_hash"] = config_hash
 
     if output_dir is not None:
         output_path = _matrix_output_path(
@@ -161,6 +166,7 @@ def compute_pairwise_boundary_matrix(
                 "backbone_id": backbone_id,
                 "logical_split": split,
                 "config_path": str(config_path) if config_path else None,
+                "config_hash": config_hash,
                 "output_csv": str(output_path),
             }
         )
@@ -182,6 +188,14 @@ def logical_split_mapping(logical_split: str) -> tuple[str, str]:
     if logical_split == "test":
         return "test", "test_indices"
     return logical_split, f"{logical_split}_indices"
+
+
+def task_logical_split_mapping(task: dict[str, Any], logical_split: str) -> tuple[str, str]:
+    _, index_field = logical_split_mapping(logical_split)
+    source_splits = task.get("source_splits", {})
+    if isinstance(source_splits, dict) and logical_split in source_splits:
+        return str(source_splits[logical_split]), index_field
+    return logical_split_mapping(logical_split)
 
 
 def _load_or_build_manifest(
@@ -222,11 +236,12 @@ def _prepare_task(
     strict_features: bool,
     feature_root: Path | None,
     seed: int,
+    diagnostics_config: dict[str, Any] | None,
 ) -> PreparedTask:
     task_id = int(task["task_id"])
     dataset_id = str(task.get("dataset_id", task.get("dataset", "")))
     classes = tuple(int(value) for value in task.get("classes", []) or [])
-    feature_bank_split, index_field = logical_split_mapping(logical_split)
+    feature_bank_split, index_field = task_logical_split_mapping(task, logical_split)
     warnings: list[str] = []
     try:
         bank = load_feature_bank(
@@ -353,6 +368,7 @@ def _compute_pair_row(
     logical_split: str,
     task_i: PreparedTask,
     task_j: PreparedTask,
+    diagnostics_config: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     base = _base_row(
         stream_id=stream_id,
@@ -378,10 +394,39 @@ def _compute_pair_row(
         proto_i = compute_task_prototype(features_i, normalize=True)
         proto_j = compute_task_prototype(features_j, normalize=True)
         centroid = centroid_separability(features_i, features_j)
-        linear = linear_probe_separability(
-            features_i, features_j, seed=seed, max_samples_per_task=None
-        )
-        knn = knn_separability(features_i, features_j, seed=seed, max_samples_per_task=None)
+        linear_config = dict((diagnostics_config or {}).get("linear_probe", {}))
+        knn_config = dict((diagnostics_config or {}).get("knn", {}))
+        if bool(linear_config.get("enabled", True)):
+            linear = linear_probe_separability(
+                features_i,
+                features_j,
+                seed=seed,
+                max_samples_per_task=None,
+                test_size=float(linear_config.get("test_size", 0.3)),
+                max_iter=int(linear_config.get("max_iter", 1000)),
+                class_weight=linear_config.get("class_weight", "balanced"),
+            )
+        else:
+            linear = {
+                "linear_probe_auc": math.nan,
+                "linear_probe_auc_symmetric": math.nan,
+                "linear_probe_acc": math.nan,
+                "reason": "linear_probe disabled by diagnostics config",
+            }
+        if bool(knn_config.get("enabled", True)):
+            knn = knn_separability(
+                features_i,
+                features_j,
+                k=int(knn_config.get("k", 5)),
+                seed=seed,
+                max_samples_per_task=None,
+            )
+        else:
+            knn = {
+                "knn_domain_acc": math.nan,
+                "knn_domain_auc": math.nan,
+                "reason": "knn disabled by diagnostics config",
+            }
         overlap = nearest_task_centroid_confusion(features_i, features_j, proto_i, proto_j)
         margin_i = prototype_margin(features_i, proto_i, proto_j)
         margin_j = prototype_margin(features_j, proto_j, proto_i)

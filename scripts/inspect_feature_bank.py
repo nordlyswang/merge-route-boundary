@@ -26,6 +26,7 @@ def main() -> int:
     args = parse_args()
     feature_root = (args.feature_root or Path(os.environ.get(FEATURE_ROOT_ENV, DEFAULT_FEATURE_ROOT))).expanduser()
     print(f"MRB_FEATURE_ROOT: {feature_root}")
+    print("canonical_layout: MRB_FEATURE_ROOT/<dataset_id>/<split>/<backbone_id>/")
     banks = list_feature_banks(feature_root)
     if not banks:
         print("No feature banks found.")

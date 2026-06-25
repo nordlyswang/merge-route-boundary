@@ -4,7 +4,7 @@ from pathlib import Path
 
 import yaml
 
-from mrb.data.registry import inspect_dataset, load_registry
+from mrb.data.registry import dataset_size_bytes, inspect_dataset, inspect_registry, load_registry
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -65,3 +65,43 @@ def test_missing_dataset_status_reports_missing(tmp_path: Path) -> None:
 
     assert status["available"] is False
     assert "dataset storage markers are missing" in status["warnings"]
+
+    assert dataset_size_bytes(registry, registry.get("missing_toy"), env={"MRB_DATA_ROOT": str(tmp_path)}) == 0
+
+
+def test_inspect_registry_handles_inspect_only_dataset(tmp_path: Path) -> None:
+    marker = tmp_path / "manual" / "toy" / "marker.txt"
+    marker.parent.mkdir(parents=True)
+    marker.write_text("ok", encoding="utf-8")
+    registry_path = tmp_path / "registry.yaml"
+    payload = {
+        "version": 1,
+        "root_env": "MRB_DATA_ROOT",
+        "paths": {"shared_root": str(tmp_path)},
+        "datasets": {
+            "manual_toy": {
+                "tier": 2,
+                "source": "manual",
+                "root": "${MRB_DATA_ROOT}/manual/toy",
+                "storage_markers": ["marker.txt"],
+                "task_type": "classification",
+                "num_classes": 2,
+                "splits": ["train", "test"],
+                "default_image_size": 32,
+                "expected_available": True,
+                "allow_in_smoke": False,
+                "large_dataset": False,
+                "manual_download": True,
+                "loader_status": "inspect_only",
+            }
+        },
+    }
+    registry_path.write_text(yaml.safe_dump(payload), encoding="utf-8")
+    registry = load_registry(registry_path)
+
+    statuses = inspect_registry(registry, data_root=tmp_path, load_smoke_metadata=True)
+
+    assert len(statuses) == 1
+    assert statuses[0]["available"] is True
+    assert statuses[0]["loader_status"] == "inspect_only"
+    assert "dataset is registered for inspection only" in statuses[0]["warnings"]

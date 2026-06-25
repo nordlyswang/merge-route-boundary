@@ -23,6 +23,11 @@ def summarize_boundary_matrix(
         sorted_pairs = ok.sort_values(metric, ascending=False)
     else:
         sorted_pairs = ok
+    least_pairs = (
+        sorted_pairs.tail(5).sort_values(metric)
+        if not sorted_pairs.empty and metric in sorted_pairs
+        else sorted_pairs.iloc[0:0]
+    )
     return {
         "num_tasks": len(tasks),
         "num_pairs": int(len(df)),
@@ -33,7 +38,7 @@ def summarize_boundary_matrix(
         "mean_centroid_l2": _mean_or_none(ok, "centroid_l2"),
         "mean_separation_ratio": _mean_or_none(ok, "separation_ratio"),
         "most_separable_pairs": _pair_records(sorted_pairs.head(5), metric),
-        "least_separable_pairs": _pair_records(sorted_pairs.tail(5).sort_values(metric), metric),
+        "least_separable_pairs": _pair_records(least_pairs, metric),
         "feature_bank_metadata": feature_bank_metadata or {},
         "manifest_path": manifest_path,
         "metric_version": metric_version,

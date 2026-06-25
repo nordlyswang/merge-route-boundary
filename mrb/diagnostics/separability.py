@@ -30,6 +30,8 @@ def linear_probe_separability(
     seed: int = 0,
     max_samples_per_task: int | None = None,
     test_size: float = 0.3,
+    max_iter: int = 1000,
+    class_weight: str | dict[int, float] | None = "balanced",
 ) -> dict[str, Any]:
     left = _sample_rows(np.asarray(features_i, dtype=np.float32), max_samples_per_task, seed)
     right = _sample_rows(np.asarray(features_j, dtype=np.float32), max_samples_per_task, seed + 1)
@@ -55,7 +57,11 @@ def linear_probe_separability(
         from sklearn.linear_model import LogisticRegression
         from sklearn.metrics import accuracy_score, roc_auc_score
 
-        classifier = LogisticRegression(max_iter=1000, class_weight="balanced", random_state=seed)
+        classifier = LogisticRegression(
+            max_iter=int(max_iter),
+            class_weight=class_weight,
+            random_state=seed,
+        )
         classifier.fit(x[train_idx], y[train_idx])
         scores = classifier.predict_proba(x[eval_idx])[:, 1]
         predictions = classifier.predict(x[eval_idx])

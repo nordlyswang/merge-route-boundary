@@ -1,6 +1,11 @@
 streams:
   real_tier0_tier2_small:
     stream_type: dataset_incremental
+    split_policy: deterministic_holdout
+    holdout:
+      train_ratio: 0.8
+      val_ratio: 0.1
+      test_ratio: 0.1
     datasets:
       - cifar10
       - cifar100
@@ -15,6 +20,11 @@ streams:
 
   real_tier0_tier2_registered_full:
     stream_type: dataset_incremental
+    split_policy: deterministic_holdout
+    holdout:
+      train_ratio: 0.8
+      val_ratio: 0.1
+      test_ratio: 0.1
     datasets:
       - cifar10
       - cifar100

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+from collections import Counter
 import sys
 from pathlib import Path
 
@@ -18,6 +19,7 @@ from mrb.diagnostics.matrices import (  # noqa: E402
     DEFAULT_OUTPUT_DIR,
     compute_pairwise_boundary_matrix,
 )
+from mrb.data.splits import stable_hash  # noqa: E402
 
 
 DEFAULT_CONFIG = REPO_ROOT / "configs" / "diagnostics" / "boundary_v0.yaml"
@@ -40,6 +42,8 @@ def parse_args() -> argparse.Namespace:
         "--strict-features", dest="strict_features", action="store_true", default=None
     )
     strict.add_argument("--allow-partial-features", dest="strict_features", action="store_false")
+    parser.add_argument("--fail-on-any-failed-pair", action="store_true")
+    parser.add_argument("--min-ok-ratio", type=float, default=None)
     parser.add_argument("--overwrite", action="store_true")
     return parser.parse_args()
 
@@ -81,16 +85,62 @@ def main() -> int:
         min_samples_per_task=min_samples,
         feature_root=args.feature_root,
         config_path=args.config,
+        diagnostics_config=diagnostics,
+        config_hash=stable_hash(config) if config else None,
         overwrite=args.overwrite,
     )
+    ok_count = int((df["status"] == "ok").sum())
+    failed_count = int((df["status"] == "failed").sum())
+    ok_ratio = float(ok_count / len(df)) if len(df) else 1.0
     print(
-        f"rows={len(df)} ok={(df['status'] == 'ok').sum()} failed={(df['status'] == 'failed').sum()}"
+        f"rows={len(df)} ok={ok_count} failed={failed_count} ok_ratio={ok_ratio:.3f}"
     )
     if "output_csv" in df.attrs:
         print(f"csv={df.attrs['output_csv']}")
     if "summary_json" in df.attrs:
         print(f"summary={df.attrs['summary_json']}")
+    min_ok_ratio = (
+        float(args.min_ok_ratio)
+        if args.min_ok_ratio is not None
+        else (1.0 if strict_features else 0.8)
+    )
+    gate = evaluate_quality_gate(
+        failed_pairs=failed_count,
+        ok_ratio=ok_ratio,
+        min_ok_ratio=min_ok_ratio,
+        fail_on_any_failed_pair=args.fail_on_any_failed_pair or strict_features,
+    )
+    if not gate["ok"]:
+        print("ERROR boundary diagnostics quality gate failed:")
+        print(f"  failed_pairs={failed_count}")
+        print(f"  min_ok_ratio={min_ok_ratio}")
+        print(f"  ok_ratio={ok_ratio:.3f}")
+        warnings = Counter(
+            str(value)
+            for value in df.get("warning", [])
+            if value is not None and str(value).strip()
+        )
+        if warnings:
+            print("  top warnings:")
+            for warning, count in warnings.most_common(5):
+                print(f"  - count={count} {warning}")
+        return 1
     return 0
+
+
+def evaluate_quality_gate(
+    *,
+    failed_pairs: int,
+    ok_ratio: float,
+    min_ok_ratio: float,
+    fail_on_any_failed_pair: bool,
+) -> dict[str, object]:
+    errors: list[str] = []
+    if fail_on_any_failed_pair and failed_pairs > 0:
+        errors.append("failed pairs are not allowed")
+    if ok_ratio < min_ok_ratio:
+        errors.append("ok ratio below threshold")
+    return {"ok": not errors, "errors": errors}
 
 
 def _load_config(path: Path) -> dict:

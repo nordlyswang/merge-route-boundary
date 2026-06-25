@@ -27,7 +27,9 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
-    paths = [args.input] if args.input else sorted(args.output_dir.glob("*.csv"))
+    paths = [args.input] if args.input else [
+        path for path in sorted(args.output_dir.glob("*.csv")) if not path.stem.endswith("_matrix")
+    ]
     if not paths:
         print(f"No diagnostics CSV files found under {args.output_dir}")
         return 0

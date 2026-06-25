@@ -49,6 +49,8 @@ def verify_nonempty_and_reproducible(stream: TaskStream) -> list[str]:
                 "val_indices": list(task.val_indices),
                 "test_indices": list(task.test_indices),
                 "image_size": task.image_size,
+                "source_splits": dict(task.source_splits) if task.source_splits else None,
+                "split_policy": task.split_policy,
             }
         )
         if task.split_hash != expected_hash:

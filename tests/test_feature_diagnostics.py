@@ -80,6 +80,51 @@ def test_select_by_indices_uses_original_indices_not_row_positions(tmp_path: Pat
     assert selected.features[:, 0].tolist() == [10.0, 30.0]
 
 
+def test_load_feature_bank_prefers_canonical_layout(tmp_path: Path) -> None:
+    legacy_dir = tmp_path / "dummy" / "toy" / "train"
+    canonical_dir = tmp_path / "toy" / "train" / "dummy"
+    _write_bank(
+        legacy_dir,
+        dataset_id="toy",
+        split="train",
+        backbone_id="dummy",
+        features=np.asarray([[1.0, 0.0]], dtype=np.float32),
+        labels=np.asarray([0], dtype=np.int64),
+        indices=np.asarray([1], dtype=np.int64),
+    )
+    _write_bank(
+        canonical_dir,
+        dataset_id="toy",
+        split="train",
+        backbone_id="dummy",
+        features=np.asarray([[2.0, 0.0]], dtype=np.float32),
+        labels=np.asarray([0], dtype=np.int64),
+        indices=np.asarray([2], dtype=np.int64),
+    )
+
+    bank = load_feature_bank("toy", "train", "dummy", feature_root=tmp_path)
+
+    assert bank.path == canonical_dir
+    assert bank.indices.tolist() == [2]
+
+
+def test_load_feature_bank_accepts_legacy_layout(tmp_path: Path) -> None:
+    legacy_dir = tmp_path / "dummy" / "toy" / "train"
+    _write_bank(
+        legacy_dir,
+        dataset_id="toy",
+        split="train",
+        backbone_id="dummy",
+        features=np.asarray([[1.0, 0.0]], dtype=np.float32),
+        labels=np.asarray([0], dtype=np.int64),
+        indices=np.asarray([1], dtype=np.int64),
+    )
+
+    bank = load_feature_bank("toy", "train", "dummy", feature_root=tmp_path)
+
+    assert bank.path == legacy_dir
+
+
 def _write_bank(
     bank_dir: Path,
     *,
