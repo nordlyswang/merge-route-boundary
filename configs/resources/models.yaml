@@ -1,0 +1,21 @@
+models:
+  - id: openai/clip-vit-base-patch32
+    source: huggingface
+    required: true
+    default_mode: metadata_only
+    allow_patterns:
+      - config.json
+      - preprocessor_config.json
+      - tokenizer.json
+      - tokenizer_config.json
+      - vocab.json
+      - merges.txt
+      - special_tokens_map.json
+
+  - id: google/vit-base-patch16-224
+    source: huggingface
+    required: false
+    default_mode: metadata_only
+    allow_patterns:
+      - config.json
+      - preprocessor_config.json

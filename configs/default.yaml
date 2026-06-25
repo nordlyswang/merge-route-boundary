@@ -1,0 +1,23 @@
+project:
+  name: merge-route-boundary
+  phase: infrastructure
+
+resources:
+  datasets_manifest: configs/resources/datasets.yaml
+  models_manifest: configs/resources/models.yaml
+
+paths:
+  data_root_env: MRB_DATA_ROOT
+  model_root_env: MRB_MODEL_ROOT
+  cache_root_env: MRB_CACHE_ROOT
+  output_root_env: MRB_OUTPUT_ROOT
+  feature_root_env: MRB_FEATURE_ROOT
+  hf_home_env: HF_HOME
+  hf_hub_cache_env: HF_HUB_CACHE
+  hf_datasets_cache_env: HF_DATASETS_CACHE
+  torch_home_env: TORCH_HOME
+
+smoke_check:
+  required_dataset: CIFAR10
+  required_model: openai/clip-vit-base-patch32
+  quick_batch_size: 4

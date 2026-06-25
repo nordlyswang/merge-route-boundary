@@ -1,0 +1,46 @@
+# environments
+.conda/
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+
+# local env files
+.env
+.env.local
+
+# large local resources
+/data/
+/data
+/datasets/
+/_cache/
+/models/
+/cache/
+/outputs/
+/features
+/features/
+/feature_cache/
+/feature_banks/
+/checkpoints/
+/logs/
+/wandb/
+/artifacts/
+
+# model artifacts
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.bin
+*.zip
+*.tar
+*.tgz
+*.gz
+*.npy
+*.npz
+
+# generated reports
+*.jsonl
+*.csv.tmp

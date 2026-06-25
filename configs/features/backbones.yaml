@@ -1,0 +1,27 @@
+version: 1
+feature_root_env: MRB_FEATURE_ROOT
+
+paths:
+  default_feature_root: /root/rivermind-data/datasets/_derived/merge-route-boundary/features
+
+backbones:
+  clip_vit_b32:
+    source: huggingface
+    loader: transformers_clip
+    model_id: openai/clip-vit-base-patch32
+    feature_dim: 512
+    image_size: 224
+    preprocess_id: transformers_clip_image_processor
+    eval_mode: true
+    gradients_enabled: false
+
+  resnet18:
+    source: torchvision
+    loader: torchvision_resnet18
+    model_id: torchvision/resnet18
+    weights: IMAGENET1K_V1
+    feature_dim: 512
+    image_size: 224
+    preprocess_id: torchvision_resnet18_imagenet_eval
+    eval_mode: true
+    gradients_enabled: false

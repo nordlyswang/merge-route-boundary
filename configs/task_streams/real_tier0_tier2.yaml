@@ -1,0 +1,36 @@
+streams:
+  real_tier0_tier2_small:
+    stream_type: dataset_incremental
+    datasets:
+      - cifar10
+      - cifar100
+      - svhn
+      - stl10
+      - dtd
+      - eurosat
+      - oxford_iiit_pet
+      - flowers102
+    val_ratio: 0.1
+    image_size: 224
+
+  real_tier0_tier2_registered_full:
+    stream_type: dataset_incremental
+    datasets:
+      - cifar10
+      - cifar100
+      - svhn
+      - stl10
+      - dtd
+      - eurosat
+      - oxford_iiit_pet
+      - flowers102
+      - fgvc_aircraft
+      - food101
+      - dataset_id: sun397
+        disabled: true
+        reason: "Large no-split dataset; keep disabled for default stream verification."
+      - dataset_id: stanford_cars
+        disabled: true
+        reason: "Manual custom layout is inspect_only in this phase."
+    val_ratio: 0.1
+    image_size: 224

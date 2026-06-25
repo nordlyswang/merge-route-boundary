@@ -1,0 +1,308 @@
+version: 1
+root_env: MRB_DATA_ROOT
+project_data_env: MRB_PROJECT_DATA
+
+policies:
+  default_tiers: [0]
+  default_keep_archives: false
+  min_free_gb_after_download: 20
+  require_explicit_large_download: true
+  large_dataset_threshold_gb: 10
+  use_file_lock: true
+
+paths:
+  shared_root: /root/rivermind-data/datasets
+  project_data_dir: /root/rivermind-data/projects/merge-route-boundary/data
+  torchvision_root: /root/rivermind-data/datasets/torchvision
+  hf_root: /root/rivermind-data/datasets/huggingface
+  manual_root: /root/rivermind-data/datasets/manual
+  metadata_root: /root/rivermind-data/datasets/_metadata
+
+datasets:
+  - name: MNIST
+    tier: 0
+    source: torchvision
+    torchvision_class: MNIST
+    root_subdir: torchvision
+    loader: train_bool
+    splits: [train, test]
+    estimated_gb: 0.1
+    default_download: true
+    storage_markers: [MNIST]
+    verify:
+      min_total_examples: 70000
+      num_classes: 10
+
+  - name: FashionMNIST
+    tier: 0
+    source: torchvision
+    torchvision_class: FashionMNIST
+    root_subdir: torchvision
+    loader: train_bool
+    splits: [train, test]
+    download_mirrors:
+      - https://github.com/zalandoresearch/fashion-mnist/raw/master/data/fashion/
+    estimated_gb: 0.1
+    default_download: true
+    storage_markers: [FashionMNIST]
+    verify:
+      min_total_examples: 70000
+      num_classes: 10
+
+  - name: CIFAR10
+    tier: 0
+    source: torchvision
+    torchvision_class: CIFAR10
+    root_subdir: torchvision
+    loader: train_bool
+    splits: [train, test]
+    estimated_gb: 0.2
+    default_download: true
+    storage_markers: [cifar-10-batches-py]
+    verify:
+      min_total_examples: 60000
+      num_classes: 10
+
+  - name: CIFAR100
+    tier: 0
+    source: torchvision
+    torchvision_class: CIFAR100
+    root_subdir: torchvision
+    loader: train_bool
+    splits: [train, test]
+    estimated_gb: 0.2
+    default_download: true
+    storage_markers: [cifar-100-python]
+    verify:
+      min_total_examples: 60000
+      num_classes: 100
+
+  - name: SVHN
+    tier: 1
+    source: torchvision
+    torchvision_class: SVHN
+    root_subdir: torchvision
+    loader: split
+    splits: [train, test]
+    estimated_gb: 2.5
+    default_download: false
+    storage_markers: [train_32x32.mat, test_32x32.mat]
+    verify:
+      min_total_examples: 99000
+      num_classes: 10
+
+  - name: STL10
+    tier: 1
+    source: torchvision
+    torchvision_class: STL10
+    root_subdir: torchvision
+    loader: split
+    splits: [train, test]
+    estimated_gb: 3.0
+    default_download: false
+    storage_markers: [stl10_binary]
+    verify:
+      min_total_examples: 13000
+      num_classes: 10
+
+  - name: Caltech101
+    tier: 1
+    source: torchvision
+    torchvision_class: Caltech101
+    root_subdir: torchvision
+    loader: no_split
+    splits: [all]
+    estimated_gb: 1.0
+    default_download: false
+    storage_markers: [caltech101]
+    verify:
+      min_total_examples: 8000
+      min_num_classes: 101
+
+  - name: DTD
+    tier: 1
+    source: torchvision
+    torchvision_class: DTD
+    root_subdir: torchvision
+    loader: split
+    splits: [train, val, test]
+    estimated_gb: 1.0
+    default_download: false
+    storage_markers: [dtd]
+    verify:
+      min_total_examples: 5640
+      num_classes: 47
+
+  - name: EuroSAT
+    tier: 1
+    source: torchvision
+    torchvision_class: EuroSAT
+    root_subdir: torchvision
+    loader: no_split
+    splits: [all]
+    estimated_gb: 0.2
+    default_download: false
+    storage_markers: [eurosat]
+    verify:
+      min_total_examples: 27000
+      num_classes: 10
+
+  - name: OxfordIIITPet
+    tier: 1
+    source: torchvision
+    torchvision_class: OxfordIIITPet
+    root_subdir: torchvision
+    loader: split
+    splits: [trainval, test]
+    estimated_gb: 1.0
+    default_download: false
+    storage_markers: [oxford-iiit-pet]
+    verify:
+      min_total_examples: 7000
+      num_classes: 37
+
+  - name: Flowers102
+    tier: 1
+    source: torchvision
+    torchvision_class: Flowers102
+    root_subdir: torchvision
+    loader: split
+    splits: [train, val, test]
+    estimated_gb: 1.0
+    default_download: false
+    storage_markers: [flowers-102]
+    verify:
+      min_total_examples: 8000
+      num_classes: 102
+
+  - name: FGVCAircraft
+    aliases: [Aircraft]
+    tier: 1
+    source: torchvision
+    torchvision_class: FGVCAircraft
+    root_subdir: torchvision
+    loader: split
+    splits: [train, val, test]
+    estimated_gb: 3.0
+    default_download: false
+    storage_markers: [fgvc-aircraft-2013b]
+    verify:
+      min_total_examples: 10000
+      num_classes: 100
+
+  - name: Food101
+    tier: 2
+    source: torchvision
+    torchvision_class: Food101
+    root_subdir: torchvision
+    loader: split
+    splits: [train, test]
+    estimated_gb: 6.0
+    default_download: false
+    storage_markers: [food-101]
+    verify:
+      min_total_examples: 101000
+      num_classes: 101
+
+  - name: SUN397
+    tier: 2
+    source: torchvision
+    torchvision_class: SUN397
+    root_subdir: torchvision
+    loader: no_split
+    splits: [all]
+    estimated_gb: 40.0
+    default_download: false
+    large: true
+    storage_markers: [SUN397]
+    verify:
+      min_total_examples: 108000
+      num_classes: 397
+
+  - name: StanfordCars
+    tier: 2
+    source: manual
+    root_subdir: manual/stanford_cars
+    estimated_gb: 3.0
+    default_download: false
+    manual: true
+    manual_reason: "The original Stanford Cars download URLs are not reliable; place files manually from an approved source."
+    verify:
+      min_total_examples: 16000
+      num_classes: 196
+
+  - name: PACS
+    tier: 3
+    source: huggingface
+    hf_id: flwrlabs/pacs
+    root_subdir: huggingface/pacs
+    estimated_gb: 1.0
+    default_download: false
+    verify:
+      min_total_examples: 9900
+      num_classes: 7
+      domains: [art_painting, cartoon, photo, sketch]
+
+  - name: OfficeHome
+    tier: 3
+    source: manual_or_huggingface
+    hf_id: flwrlabs/office-home
+    root_subdir: huggingface/office-home
+    estimated_gb: 2.0
+    default_download: false
+    manual: true
+    verify:
+      min_total_examples: 15000
+      num_classes: 65
+      domains: [Art, Clipart, Product, Real_World]
+
+  - name: ImageNetR
+    tier: 3
+    source: manual_or_huggingface
+    hf_id: axiong/imagenet-r
+    root_subdir: huggingface/imagenet-r
+    estimated_gb: 3.0
+    default_download: false
+    manual: true
+    verify:
+      min_total_examples: 30000
+      num_classes: 200
+
+  - name: ImageNetSketch
+    tier: 3
+    source: manual_or_huggingface
+    hf_id: songweig/imagenet_sketch
+    root_subdir: huggingface/imagenet_sketch
+    estimated_gb: 4.0
+    default_download: false
+    manual: true
+    verify:
+      min_total_examples: 50000
+      num_classes: 1000
+
+  - name: DomainNetFull
+    tier: 3
+    source: manual_or_huggingface
+    hf_id: wltjr1007/DomainNet
+    root_subdir: huggingface/domainnet
+    estimated_gb: 25.0
+    default_download: false
+    large: true
+    manual: true
+    verify:
+      min_total_examples: 500000
+      domains: [clipart, infograph, painting, quickdraw, real, sketch]
+
+  - name: ImageNet1K
+    tier: 3
+    source: manual_gated
+    root_subdir: manual/imagenet1k
+    estimated_gb: 130.0
+    default_download: false
+    large: true
+    manual: true
+    gated: true
+    manual_reason: "Requires official ImageNet access and research terms. Do not auto-download."
+    verify:
+      min_total_examples: 1280000
+      num_classes: 1000

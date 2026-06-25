@@ -1,0 +1,27 @@
+streams:
+  controlled_cifar100_split_10x10:
+    stream_type: class_incremental
+    base_dataset: cifar100
+    num_tasks: 10
+    classes_per_task: 10
+    class_order_seed: 0
+    val_ratio: 0.1
+    image_size: 224
+
+  controlled_cifar10_split_5x2:
+    stream_type: class_incremental
+    base_dataset: cifar10
+    num_tasks: 5
+    classes_per_task: 2
+    class_order_seed: 0
+    val_ratio: 0.1
+    image_size: 224
+
+  controlled_domain_mixed_small:
+    stream_type: dataset_incremental
+    datasets:
+      - cifar10
+      - svhn
+      - stl10
+    val_ratio: 0.1
+    image_size: 224

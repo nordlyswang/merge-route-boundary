@@ -1,0 +1,23 @@
+diagnostics:
+  default_split: train
+  max_samples_per_task: 500
+  min_samples_per_task: 50
+  strict_features: true
+  normalize_features: true
+  sample_seed: 0
+  linear_probe:
+    enabled: true
+    test_size: 0.3
+    max_iter: 1000
+    class_weight: balanced
+  knn:
+    enabled: true
+    k: 5
+  silhouette:
+    enabled: false
+    max_samples_total: 2000
+
+outputs:
+  root: artifacts/diagnostics/boundary_v0
+  save_csv: true
+  save_summary_json: true

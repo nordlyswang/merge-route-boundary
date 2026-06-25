@@ -1,0 +1,333 @@
+version: 1
+root_env: MRB_DATA_ROOT
+project_data_env: MRB_PROJECT_DATA
+
+paths:
+  shared_root: /root/rivermind-data/datasets
+  project_data_dir: /root/rivermind-data/projects/merge-route-boundary/data
+
+datasets:
+  mnist:
+    tier: 0
+    source: torchvision
+    torchvision_class: MNIST
+    root: ${MRB_DATA_ROOT:-/root/rivermind-data/datasets}/torchvision
+    storage_markers: [MNIST/raw]
+    loader: train_bool
+    task_type: classification
+    num_classes: 10
+    splits: [train, test]
+    sample_counts:
+      train: 60000
+      test: 10000
+    default_image_size: 224
+    image_mode: L
+    expected_available: true
+    allow_in_smoke: false
+    large_dataset: false
+    manual_download: false
+    custom_layout: false
+    loader_status: supported
+    estimated_gb: 0.1
+    notes: "Torchvision MNIST. Loader must use download=False."
+
+  fashion_mnist:
+    tier: 0
+    source: torchvision
+    torchvision_class: FashionMNIST
+    root: ${MRB_DATA_ROOT:-/root/rivermind-data/datasets}/torchvision
+    storage_markers: [FashionMNIST/raw]
+    loader: train_bool
+    task_type: classification
+    num_classes: 10
+    splits: [train, test]
+    sample_counts:
+      train: 60000
+      test: 10000
+    default_image_size: 224
+    image_mode: L
+    expected_available: true
+    allow_in_smoke: false
+    large_dataset: false
+    manual_download: false
+    custom_layout: false
+    loader_status: supported
+    estimated_gb: 0.1
+    notes: "Torchvision FashionMNIST. Loader must use download=False."
+
+  cifar10:
+    tier: 0
+    source: torchvision
+    torchvision_class: CIFAR10
+    root: ${MRB_DATA_ROOT:-/root/rivermind-data/datasets}/torchvision
+    storage_markers: [cifar-10-batches-py]
+    loader: train_bool
+    task_type: classification
+    num_classes: 10
+    splits: [train, test]
+    sample_counts:
+      train: 50000
+      test: 10000
+    default_image_size: 224
+    image_mode: RGB
+    expected_available: true
+    allow_in_smoke: true
+    large_dataset: false
+    manual_download: false
+    custom_layout: false
+    loader_status: supported
+    estimated_gb: 0.2
+    notes: "Torchvision CIFAR10. Loader must use download=False."
+
+  cifar100:
+    tier: 0
+    source: torchvision
+    torchvision_class: CIFAR100
+    root: ${MRB_DATA_ROOT:-/root/rivermind-data/datasets}/torchvision
+    storage_markers: [cifar-100-python]
+    loader: train_bool
+    task_type: classification
+    num_classes: 100
+    splits: [train, test]
+    sample_counts:
+      train: 50000
+      test: 10000
+    default_image_size: 224
+    image_mode: RGB
+    expected_available: true
+    allow_in_smoke: true
+    large_dataset: false
+    manual_download: false
+    custom_layout: false
+    loader_status: supported
+    estimated_gb: 0.2
+    notes: "Torchvision CIFAR100. Loader must use download=False."
+
+  svhn:
+    tier: 1
+    source: torchvision
+    torchvision_class: SVHN
+    root: ${MRB_DATA_ROOT:-/root/rivermind-data/datasets}/torchvision
+    storage_markers: [train_32x32.mat, test_32x32.mat]
+    loader: split
+    task_type: classification
+    num_classes: 10
+    splits: [train, test]
+    default_image_size: 224
+    image_mode: RGB
+    expected_available: true
+    allow_in_smoke: false
+    large_dataset: false
+    manual_download: false
+    custom_layout: false
+    loader_status: supported
+    estimated_gb: 2.5
+    notes: "Torchvision SVHN. Loader must use download=False."
+
+  stl10:
+    tier: 1
+    source: torchvision
+    torchvision_class: STL10
+    root: ${MRB_DATA_ROOT:-/root/rivermind-data/datasets}/torchvision
+    storage_markers: [stl10_binary]
+    loader: split
+    task_type: classification
+    num_classes: 10
+    splits: [train, test]
+    default_image_size: 224
+    image_mode: RGB
+    expected_available: true
+    allow_in_smoke: false
+    large_dataset: false
+    manual_download: false
+    custom_layout: false
+    loader_status: supported
+    estimated_gb: 3.0
+    notes: "Torchvision STL10 supervised splits only. Unlabeled split is not used."
+
+  caltech101:
+    tier: 1
+    source: torchvision
+    torchvision_class: Caltech101
+    root: ${MRB_DATA_ROOT:-/root/rivermind-data/datasets}/torchvision
+    storage_markers: [caltech101]
+    loader: no_split
+    task_type: classification
+    num_classes: 101
+    splits: [all]
+    default_image_size: 224
+    image_mode: RGB
+    expected_available: true
+    allow_in_smoke: false
+    large_dataset: false
+    manual_download: false
+    custom_layout: false
+    loader_status: supported
+    estimated_gb: 1.0
+    notes: "Torchvision Caltech101 has no official train/test split in this loader."
+
+  dtd:
+    tier: 1
+    source: torchvision
+    torchvision_class: DTD
+    root: ${MRB_DATA_ROOT:-/root/rivermind-data/datasets}/torchvision
+    storage_markers: [dtd]
+    loader: split
+    task_type: classification
+    num_classes: 47
+    splits: [train, val, test]
+    default_image_size: 224
+    image_mode: RGB
+    expected_available: true
+    allow_in_smoke: false
+    large_dataset: false
+    manual_download: false
+    custom_layout: false
+    loader_status: supported
+    estimated_gb: 1.0
+    notes: "Torchvision DTD partition 1 default. Loader must use download=False."
+
+  eurosat:
+    tier: 1
+    source: torchvision
+    torchvision_class: EuroSAT
+    root: ${MRB_DATA_ROOT:-/root/rivermind-data/datasets}/torchvision
+    storage_markers: [eurosat]
+    loader: no_split
+    task_type: classification
+    num_classes: 10
+    splits: [all]
+    default_image_size: 224
+    image_mode: RGB
+    expected_available: true
+    allow_in_smoke: false
+    large_dataset: false
+    manual_download: false
+    custom_layout: false
+    loader_status: supported
+    estimated_gb: 0.2
+    notes: "Torchvision EuroSAT has no official split in this loader."
+
+  oxford_iiit_pet:
+    tier: 1
+    source: torchvision
+    torchvision_class: OxfordIIITPet
+    root: ${MRB_DATA_ROOT:-/root/rivermind-data/datasets}/torchvision
+    storage_markers: [oxford-iiit-pet]
+    loader: split
+    task_type: classification
+    num_classes: 37
+    splits: [trainval, test]
+    default_image_size: 224
+    image_mode: RGB
+    expected_available: true
+    allow_in_smoke: false
+    large_dataset: false
+    manual_download: false
+    custom_layout: false
+    loader_status: supported
+    estimated_gb: 1.0
+    notes: "Torchvision OxfordIIITPet category target. Loader must use download=False."
+
+  flowers102:
+    tier: 1
+    source: torchvision
+    torchvision_class: Flowers102
+    root: ${MRB_DATA_ROOT:-/root/rivermind-data/datasets}/torchvision
+    storage_markers: [flowers-102]
+    loader: split
+    task_type: classification
+    num_classes: 102
+    splits: [train, val, test]
+    default_image_size: 224
+    image_mode: RGB
+    expected_available: true
+    allow_in_smoke: false
+    large_dataset: false
+    manual_download: false
+    custom_layout: false
+    loader_status: supported
+    estimated_gb: 1.0
+    notes: "Torchvision Flowers102. Loader must use download=False."
+
+  fgvc_aircraft:
+    tier: 1
+    source: torchvision
+    torchvision_class: FGVCAircraft
+    root: ${MRB_DATA_ROOT:-/root/rivermind-data/datasets}/torchvision
+    storage_markers: [fgvc-aircraft-2013b]
+    loader: split
+    task_type: classification
+    num_classes: 100
+    splits: [train, val, test]
+    default_image_size: 224
+    image_mode: RGB
+    expected_available: true
+    allow_in_smoke: false
+    large_dataset: false
+    manual_download: false
+    custom_layout: false
+    loader_status: supported
+    estimated_gb: 3.0
+    notes: "Torchvision FGVC Aircraft variant labels. Loader must use download=False."
+
+  food101:
+    tier: 2
+    source: torchvision
+    torchvision_class: Food101
+    root: ${MRB_DATA_ROOT:-/root/rivermind-data/datasets}/torchvision
+    storage_markers: [food-101]
+    loader: split
+    task_type: classification
+    num_classes: 101
+    splits: [train, test]
+    default_image_size: 224
+    image_mode: RGB
+    expected_available: true
+    allow_in_smoke: false
+    large_dataset: false
+    manual_download: false
+    custom_layout: false
+    loader_status: supported
+    estimated_gb: 6.0
+    notes: "Torchvision Food101. Loader must use download=False."
+
+  sun397:
+    tier: 2
+    source: torchvision
+    torchvision_class: SUN397
+    root: ${MRB_DATA_ROOT:-/root/rivermind-data/datasets}/torchvision
+    storage_markers: [SUN397]
+    loader: no_split
+    task_type: classification
+    num_classes: 397
+    splits: [all]
+    default_image_size: 224
+    image_mode: RGB
+    expected_available: true
+    allow_in_smoke: false
+    large_dataset: true
+    manual_download: false
+    custom_layout: false
+    loader_status: supported
+    estimated_gb: 40.0
+    notes: "Torchvision SUN397 has no official split in this loader. Registered for inspection and later manifest-controlled splits."
+
+  stanford_cars:
+    tier: 2
+    source: manual
+    root: ${MRB_DATA_ROOT:-/root/rivermind-data/datasets}/manual/stanford_cars
+    storage_markers: [cars_annos.mat, cars_train, cars_test]
+    task_type: classification
+    num_classes: 196
+    splits: [train, test]
+    default_image_size: 224
+    image_mode: RGB
+    expected_available: true
+    allow_in_smoke: false
+    large_dataset: false
+    manual_download: true
+    custom_layout: true
+    loader_status: inspect_only
+    estimated_gb: 3.0
+    notes: "Manual Stanford Cars layout is registered for storage inspection only in this phase."
