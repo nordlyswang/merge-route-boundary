@@ -1,0 +1,57 @@
+experiment:
+  stream: controlled_cifar100_split_10x10
+  seed: 0
+  backbone: clip_vit_b32
+  split_manifest: artifacts/manifests/splits/controlled_cifar100_split_10x10_seed0.json
+  diagnostics_csv: artifacts/diagnostics/boundary_v0/controlled_cifar100_split_10x10_seed0_clip_vit_b32_train.csv
+
+data:
+  max_train_per_task: null
+  max_val_per_task: null
+  max_test_per_task: null
+  normalize_features: true
+
+classifiers:
+  prototype:
+    enabled: true
+  linear:
+    enabled: false
+    max_iter: 1000
+    class_weight: balanced
+    solver: lbfgs
+    max_train_per_task: 5000
+
+routers:
+  centroid:
+    enabled: true
+  linear:
+    enabled: true
+    max_iter: 1000
+    class_weight: balanced
+    solver: lbfgs
+    max_train_per_task: null
+  energy:
+    enabled: true
+    score: max
+    top_k: 3
+
+controls:
+  oracle_task_mask:
+    enabled: true
+  learned_task_mask:
+    enabled: true
+    routers:
+      - centroid
+      - linear
+      - energy
+
+clusters:
+  ks: [1, 2, 4, 5, 10]
+  strategies:
+    - sequential
+    - diagnostics_auc
+
+outputs:
+  root: artifacts/baselines/feature_toy_v0
+  save_predictions: false
+  save_confusion: true

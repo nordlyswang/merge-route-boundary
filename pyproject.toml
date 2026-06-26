@@ -16,7 +16,7 @@ dependencies = [
 ]
 
 [tool.setuptools]
-packages = ["mrb", "mrb.data", "mrb.features", "mrb.diagnostics"]
+packages = ["mrb", "mrb.data", "mrb.features", "mrb.diagnostics", "mrb.baselines"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
