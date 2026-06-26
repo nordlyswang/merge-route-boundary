@@ -124,6 +124,18 @@ def _freeze_model(model: object) -> object:
     return model
 
 
+def _clip_features_tensor(output: object) -> object:
+    if hasattr(output, "detach"):
+        return output
+    pooler_output = getattr(output, "pooler_output", None)
+    if pooler_output is not None:
+        return pooler_output
+    image_embeds = getattr(output, "image_embeds", None)
+    if image_embeds is not None:
+        return image_embeds
+    raise TypeError(f"CLIP image feature output is not tensor-like: {type(output).__name__}")
+
+
 def _build_clip_backbone(spec: BackboneSpec, device: str) -> FrozenBackbone:
     try:
         import torch
@@ -132,7 +144,12 @@ def _build_clip_backbone(spec: BackboneSpec, device: str) -> FrozenBackbone:
         raise RuntimeError("transformers and torch are required for clip_vit_b32 extraction") from exc
 
     image_processor = AutoImageProcessor.from_pretrained(spec.model_id)
-    model = CLIPModel.from_pretrained(spec.model_id)
+    model_kwargs: dict[str, Any] = {}
+    if spec.config.get("use_safetensors", False):
+        model_kwargs["use_safetensors"] = True
+    if spec.config.get("revision"):
+        model_kwargs["revision"] = str(spec.config["revision"])
+    model = CLIPModel.from_pretrained(spec.model_id, **model_kwargs)
     _freeze_model(model)
     model.to(torch.device(device))
 
@@ -140,7 +157,8 @@ def _build_clip_backbone(spec: BackboneSpec, device: str) -> FrozenBackbone:
         inputs = image_processor(images=list(images), return_tensors="pt")
         pixel_values = inputs["pixel_values"].to(torch.device(device))
         with torch.inference_mode():
-            return model.get_image_features(pixel_values=pixel_values).detach().cpu()
+            output = model.get_image_features(pixel_values=pixel_values)
+            return _clip_features_tensor(output).detach().cpu()
 
     return FrozenBackbone(
         backbone_id=spec.backbone_id,

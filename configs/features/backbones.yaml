@@ -9,6 +9,8 @@ backbones:
     source: huggingface
     loader: transformers_clip
     model_id: openai/clip-vit-base-patch32
+    revision: refs/pr/66
+    use_safetensors: true
     feature_dim: 512
     image_size: 224
     preprocess_id: transformers_clip_image_processor
