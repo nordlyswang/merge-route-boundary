@@ -58,14 +58,27 @@ class CentroidRouter:
         return self
 
     def predict(self, features: np.ndarray) -> np.ndarray:
+        scores = self.decision_scores(features)
+        if self.route_ids_ is None:
+            raise ValueError("CentroidRouter is not fitted")
+        return self.route_ids_[np.argmax(scores, axis=1)]
+
+    def decision_scores(self, features: np.ndarray) -> np.ndarray:
         if self.route_ids_ is None or self.centroids_ is None:
             raise ValueError("CentroidRouter is not fitted")
         values = np.asarray(features, dtype=np.float32)
         if values.ndim != 2:
             raise ValueError(f"features must be rank 2 [N, D], got shape {values.shape}")
         query = l2_normalize(values) if self.normalize else values
-        scores = query @ self.centroids_.T
-        return self.route_ids_[np.argmax(scores, axis=1)]
+        return np.asarray(query @ self.centroids_.T, dtype=np.float32)
+
+    def predict_topk(self, features: np.ndarray, k: int) -> np.ndarray:
+        if self.route_ids_ is None:
+            raise ValueError("CentroidRouter is not fitted")
+        return _topk_route_ids(self.route_ids_, self.decision_scores(features), k)
+
+    def confidence(self, features: np.ndarray) -> np.ndarray:
+        return _top_two_margin(self.decision_scores(features))
 
 
 @dataclass
@@ -106,6 +119,36 @@ class SklearnLinearRouter:
         if values.ndim != 2:
             raise ValueError(f"features must be rank 2 [N, D], got shape {values.shape}")
         return np.asarray(self.model_.predict(values), dtype=np.int64)
+
+    def decision_scores(self, features: np.ndarray) -> np.ndarray:
+        if self.model_ is None:
+            raise ValueError("SklearnLinearRouter is not fitted")
+        values = np.asarray(features, dtype=np.float32)
+        if values.ndim != 2:
+            raise ValueError(f"features must be rank 2 [N, D], got shape {values.shape}")
+        if hasattr(self.model_, "predict_proba"):
+            return np.asarray(self.model_.predict_proba(values), dtype=np.float32)
+        raw_scores = np.asarray(self.model_.decision_function(values), dtype=np.float32)
+        if raw_scores.ndim == 1:
+            raw_scores = np.vstack([-raw_scores, raw_scores]).T
+        return raw_scores
+
+    def predict_topk(self, features: np.ndarray, k: int) -> np.ndarray:
+        if self.model_ is None:
+            raise ValueError("SklearnLinearRouter is not fitted")
+        return _topk_route_ids(self.model_.classes_, self.decision_scores(features), k)
+
+    def confidence(self, features: np.ndarray) -> np.ndarray:
+        if self.model_ is None:
+            raise ValueError("SklearnLinearRouter is not fitted")
+        values = np.asarray(features, dtype=np.float32)
+        if values.ndim != 2:
+            raise ValueError(f"features must be rank 2 [N, D], got shape {values.shape}")
+        if hasattr(self.model_, "predict_proba"):
+            probabilities = np.asarray(self.model_.predict_proba(values), dtype=np.float32)
+        else:
+            probabilities = _softmax(self.decision_scores(values))
+        return np.asarray(probabilities.max(axis=1), dtype=np.float32)
 
 
 @dataclass
@@ -159,6 +202,12 @@ class PrototypeEnergyRouter:
         return self
 
     def predict(self, features: np.ndarray) -> np.ndarray:
+        scores = self.decision_scores(features)
+        if self.route_ids_ is None:
+            raise ValueError("PrototypeEnergyRouter is not fitted")
+        return self.route_ids_[np.argmax(scores, axis=1)]
+
+    def decision_scores(self, features: np.ndarray) -> np.ndarray:
         if self.route_ids_ is None or not self.prototypes_by_route_:
             raise ValueError("PrototypeEnergyRouter is not fitted")
         values = np.asarray(features, dtype=np.float32)
@@ -176,8 +225,15 @@ class PrototypeEnergyRouter:
             else:
                 raise ValueError(f"Unsupported energy router score: {self.score}")
             scores.append(np.asarray(route_score, dtype=np.float32))
-        score_matrix = np.vstack(scores).T
-        return self.route_ids_[np.argmax(score_matrix, axis=1)]
+        return np.asarray(np.vstack(scores).T, dtype=np.float32)
+
+    def predict_topk(self, features: np.ndarray, k: int) -> np.ndarray:
+        if self.route_ids_ is None:
+            raise ValueError("PrototypeEnergyRouter is not fitted")
+        return _topk_route_ids(self.route_ids_, self.decision_scores(features), k)
+
+    def confidence(self, features: np.ndarray) -> np.ndarray:
+        return _top_two_margin(self.decision_scores(features))
 
 
 def _validate_features_routes(features: np.ndarray, route_ids: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -217,3 +273,42 @@ def _sample_per_route(
         selected.extend(int(row) for row in shuffled[:max_per_route])
     row_array = np.asarray(sorted(selected), dtype=np.int64)
     return features[row_array], route_ids[row_array]
+
+
+def _topk_route_ids(route_ids: np.ndarray, scores: np.ndarray, k: int) -> np.ndarray:
+    route_values = np.asarray(route_ids, dtype=np.int64)
+    score_values = _validate_score_matrix(scores)
+    if route_values.ndim != 1 or route_values.shape[0] != score_values.shape[1]:
+        raise ValueError("route_ids must match score columns")
+    if k <= 0:
+        raise ValueError("k must be positive")
+    limit = min(int(k), route_values.shape[0])
+    order = np.argsort(-score_values, axis=1)[:, :limit]
+    return route_values[order]
+
+
+def _top_two_margin(scores: np.ndarray) -> np.ndarray:
+    score_values = _validate_score_matrix(scores)
+    if score_values.shape[1] == 1:
+        return np.asarray(score_values[:, 0], dtype=np.float32)
+    top_two = np.partition(score_values, -2, axis=1)[:, -2:]
+    top_two.sort(axis=1)
+    return np.asarray(top_two[:, 1] - top_two[:, 0], dtype=np.float32)
+
+
+def _softmax(scores: np.ndarray) -> np.ndarray:
+    score_values = _validate_score_matrix(scores)
+    shifted = score_values - np.max(score_values, axis=1, keepdims=True)
+    exp = np.exp(shifted)
+    return np.asarray(exp / np.sum(exp, axis=1, keepdims=True), dtype=np.float32)
+
+
+def _validate_score_matrix(scores: np.ndarray) -> np.ndarray:
+    score_values = np.asarray(scores, dtype=np.float32)
+    if score_values.ndim != 2:
+        raise ValueError(f"scores must be rank 2 [N, R], got shape {score_values.shape}")
+    if score_values.shape[1] == 0:
+        raise ValueError("scores must have at least one route column")
+    if not np.isfinite(score_values).all():
+        raise ValueError("scores contains NaN or Inf")
+    return score_values

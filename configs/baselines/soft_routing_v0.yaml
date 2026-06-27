@@ -1,0 +1,49 @@
+experiment:
+  stream: controlled_cifar100_split_10x10
+  seed: 0
+  backbone: clip_vit_b32
+  split_manifest: artifacts/manifests/splits/controlled_cifar100_split_10x10_seed0.json
+
+data:
+  normalize_features: true
+  max_train_per_task: null
+  max_val_per_task: null
+  max_test_per_task: null
+
+base_methods:
+  include_previous_controls: true
+
+routers:
+  linear:
+    enabled: true
+    max_iter: 1000
+    class_weight: balanced
+    solver: lbfgs
+    max_train_per_task: null
+  energy:
+    enabled: true
+    score: max
+    top_k: 3
+
+topk_controls:
+  enabled: true
+  routers: [linear, energy]
+  ks: [2, 3, 5]
+
+fallback_controls:
+  enabled: true
+  routers: [linear, energy]
+  select_tau_on: val
+  linear_tau_grid: [0.0, 0.2, 0.4, 0.6, 0.7, 0.8, 0.9, 0.95]
+  energy_tau_quantiles: [0.0, 0.1, 0.2, 0.3, 0.5, 0.7]
+
+soft_prior_controls:
+  enabled: true
+  routers: [linear, energy]
+  select_beta_on: val
+  beta_grid: [0.0, 0.1, 0.25, 0.5, 1.0, 2.0, 4.0]
+
+outputs:
+  root: artifacts/baselines/soft_routing_v0
+  save_predictions: false
+  save_confusion: true
