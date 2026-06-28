@@ -1,0 +1,44 @@
+experiment:
+  stream: controlled_cifar100_split_10x10
+  seed: 0
+  backbone: clip_vit_b32
+  split_manifest: artifacts/manifests/splits/controlled_cifar100_split_10x10_seed0.json
+
+data:
+  normalize_features: true
+  max_train_per_task: null
+  max_val_per_task: null
+  max_test_per_task: null
+
+inputs:
+  feature_toy_results: artifacts/baselines/feature_toy_v0/controlled_cifar100_split_10x10_seed0_clip_vit_b32_results.csv
+  soft_routing_results: artifacts/baselines/soft_routing_v0/controlled_cifar100_split_10x10_seed0_clip_vit_b32_results.csv
+  router_calibration_results: artifacts/baselines/router_calibration_v0/controlled_cifar100_split_10x10_seed0_clip_vit_b32_results.csv
+  diagnostics_csv: artifacts/diagnostics/boundary_v0/controlled_cifar100_split_10x10_seed0_clip_vit_b32_train.csv
+
+router:
+  type: linear
+  use_calibrated_temperature: true
+  selected_temperature: auto
+  max_iter: 1000
+  class_weight: balanced
+  solver: lbfgs
+  max_train_per_task: null
+
+calibration:
+  temperatures: [0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 3.0, 4.0, 6.0, 8.0]
+  ece_bins: 15
+
+fallback:
+  select_tau_on: val
+  tau_grid: [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95]
+
+analysis:
+  topk_values: [1, 2, 3, 5]
+  confidence_bins: 10
+  include_energy_router: false
+  save_sample_level: false
+  save_confusion: true
+
+outputs:
+  root: artifacts/baselines/router_error_anatomy_v0
