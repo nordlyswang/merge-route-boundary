@@ -1,0 +1,49 @@
+experiment:
+  stream: controlled_cifar100_split_10x10
+  seed: 0
+  backbone: clip_vit_b32
+  split_manifest: artifacts/manifests/splits/controlled_cifar100_split_10x10_seed0.json
+
+data:
+  normalize_features: true
+  max_train_per_task: null
+  max_val_per_task: null
+  max_test_per_task: null
+
+router:
+  type: linear
+  max_iter: 1000
+  class_weight: balanced
+  solver: lbfgs
+  max_train_per_task: null
+
+calibration:
+  enabled: true
+  select_temperature_on: val
+  temperatures: [0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 3.0, 4.0, 6.0, 8.0]
+  ece_bins: 15
+
+fallback:
+  enabled: true
+  select_tau_on: val
+  tau_grid: [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95]
+
+soft_prior:
+  enabled: true
+  select_beta_on: val
+  beta_grid: [0.0, 0.05, 0.1, 0.2, 0.35, 0.5, 0.75, 1.0, 1.5, 2.0, 3.0]
+
+topk_frontier:
+  enabled: true
+  ks: [1, 2, 3, 4, 5, 7, 10]
+
+oracle_topk_decomposition:
+  enabled: true
+  ks: [1, 2, 3, 4, 5, 7, 10]
+  random_extra_repeats: 5
+  include_nearest_extra: false
+
+outputs:
+  root: artifacts/baselines/router_calibration_v0
+  save_predictions: false
+  save_confusion: true
