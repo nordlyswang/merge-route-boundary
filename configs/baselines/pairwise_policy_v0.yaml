@@ -1,0 +1,54 @@
+experiment:
+  stream: controlled_cifar100_split_10x10
+  seed: 0
+  backbone: clip_vit_b32
+  split_manifest: artifacts/manifests/splits/controlled_cifar100_split_10x10_seed0.json
+
+inputs:
+  diagnostics_csv: artifacts/diagnostics/boundary_v0/controlled_cifar100_split_10x10_seed0_clip_vit_b32_train.csv
+  router_error_anatomy_dir: artifacts/baselines/router_error_anatomy_v0
+  soft_routing_results: artifacts/baselines/soft_routing_v0/controlled_cifar100_split_10x10_seed0_clip_vit_b32_results.csv
+  router_calibration_results: artifacts/baselines/router_calibration_v0/controlled_cifar100_split_10x10_seed0_clip_vit_b32_results.csv
+
+data:
+  normalize_features: true
+  max_train_per_task: null
+  max_val_per_task: null
+  max_test_per_task: null
+
+router:
+  type: linear
+  use_temperature: true
+  selected_temperature: auto
+  max_iter: 1000
+  class_weight: balanced
+  solver: lbfgs
+  max_train_per_task: null
+  random_state: 0
+
+calibration:
+  enabled: true
+  select_temperature_on: val
+  temperatures: [0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 3.0, 4.0, 6.0, 8.0]
+  ece_bins: 15
+
+policy:
+  enabled: true
+  select_on: val
+  candidate_actions: [top1_mask, top2_mask, fallback_merge_all]
+  tau_fallback_grid: [0.0, 0.2, 0.4, 0.5, 0.6, 0.7, 0.8]
+  tau_margin_grid: [0.0, 0.05, 0.1, 0.15, 0.2, 0.3]
+  tau_pair_auc_grid: [0.90, 0.93, 0.95, 0.97, 0.99]
+  tau_pair_confusion_grid: [0.02, 0.04, 0.06, 0.08]
+  topk_controls: [2, 3, 4, 5, 7, 10]
+  default_pair_auc: 1.0
+  tie_break:
+    - higher_val_acc
+    - lower_mean_mask_size
+    - lower_fallback_rate
+
+outputs:
+  root: artifacts/baselines/pairwise_policy_v0
+  save_predictions: false
+  save_pairwise_table: true
+  save_threshold_grid: true
